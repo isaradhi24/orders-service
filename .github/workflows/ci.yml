@@ -10,10 +10,20 @@ on:
 permissions:
   contents: read
 
+env:
+  AWS_REGION: us-east-1
+  ECR_REGISTRY: 905418207697.dkr.ecr.us-east-1.amazonaws.com
+  ECR_REPOSITORY: orders-service
+  IMAGE_TAG: ${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+
 jobs:
   build:
     runs-on: ubuntu-24.04
     timeout-minutes: 15
+
+    permissions:
+      contents: read
+      id-token: write
 
     steps:
       - name: Checkout source
@@ -35,4 +45,29 @@ jobs:
         run: ./mvnw --batch-mode --no-transfer-progress clean verify
 
       - name: Build Docker image
-        run: docker build -t orders-service:${{ github.sha }} .
+        run: |
+          docker build \
+            -t "$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" .
+
+      - name: Authenticate to AWS using OIDC
+        if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+        uses: aws-actions/configure-aws-credentials@v6.3.0
+        with:
+          role-to-assume: arn:aws:iam::905418207697:role/orders-service-github-ecr
+          aws-region: ${{ env.AWS_REGION }}
+          allowed-account-ids: '905418207697'
+          role-session-name: orders-ci-${{ github.run_id }}
+
+      - name: Log in to ECR
+        if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+        run: |
+          aws ecr get-login-password --region "$AWS_REGION" |
+            docker login \
+              --username AWS \
+              --password-stdin "$ECR_REGISTRY"
+
+      - name: Push Docker image
+        if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+        run: |
+          docker push "$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG"
+          echo "Published: $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG"
