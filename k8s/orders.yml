@@ -3,6 +3,15 @@ kind: Namespace
 metadata:
   name: orders-lab
 ---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: orders-config
+  namespace: orders-lab
+data:
+  SPRING_PROFILES_ACTIVE: "qa"
+  LOGGING_LEVEL_ROOT: "INFO"
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -25,11 +34,19 @@ spec:
           ports:
             - name: http
               containerPort: 8080
+          envFrom:
+            - configMapRef:
+                name: orders-config
           env:
             - name: MANAGEMENT_ENDPOINT_HEALTH_PROBES_ENABLED
               value: "true"
             - name: JAVA_TOOL_OPTIONS
               value: "-XX:MaxRAMPercentage=50.0"
+            - name: DEMO_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: orders-demo-secret
+                  key: password
           resources:
             requests:
               cpu: 100m
