@@ -33,4 +33,16 @@ jobs:
         run: |
           aws cloudformation validate-template \
             --template-body file://cloudformation/bootstrap-oidc.yml
-            
+      - name: Deploy networking stack
+        run: |
+          aws cloudformation deploy \
+            --template-file cloudformation/network.yml \
+            --stack-name interview-network \
+            --role-arn arn:aws:iam::149703445367:role/interview-cfn-execution-role \
+            --no-fail-on-empty-changeset
+      - name: Show networking outputs
+        run: |
+          aws cloudformation describe-stacks \
+            --stack-name interview-network \
+            --query 'Stacks[0].Outputs' \
+            --output table  
