@@ -101,6 +101,7 @@ Resources:
                   - cloudformation:DescribeStackEvents
                   - cloudformation:ListStackResources
                   - cloudformation:DeleteStack
+                  - cloudformation:GetTemplateSummary
                 Resource:
                   - !Sub arn:aws:cloudformation:${AWS::Region}:${AWS::AccountId}:stack/interview-network/*
                   - !Sub arn:aws:cloudformation:${AWS::Region}:${AWS::AccountId}:stack/interview-ec2/*
