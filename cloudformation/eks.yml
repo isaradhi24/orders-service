@@ -1,6 +1,10 @@
 AWSTemplateFormatVersion: "2010-09-09"
 Description: EKS control plane for the interview lab - no worker nodes
 
+Metadata:
+  com.aws.cloudformation.Context:
+    arch: "Creates an EKS control plane in two existing subnets and a service role assumed by EKS; no worker nodes are provisioned."
+
 Parameters:
   SubnetA:
     Type: AWS::EC2::Subnet::Id
@@ -11,6 +15,9 @@ Parameters:
 Resources:
   EksClusterRole:
     Type: AWS::IAM::Role
+    Metadata:
+      com.aws.cloudformation.Context:
+        why: "Grants the EKS service permissions to manage supporting AWS resources for the cluster."
     Properties:
       RoleName: interview-eks-cluster-role
       AssumeRolePolicyDocument:
@@ -25,6 +32,9 @@ Resources:
 
   EksCluster:
     Type: AWS::EKS::Cluster
+    Metadata:
+      com.aws.cloudformation.Context:
+        why: "Provides a managed Kubernetes control plane for the interview lab without provisioning worker nodes."
     Properties:
       Name: interview-eks
       RoleArn: !GetAtt EksClusterRole.Arn
