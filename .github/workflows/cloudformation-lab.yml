@@ -10,7 +10,7 @@ permissions:
 jobs:
   verify-aws-access:
     runs-on: ubuntu-24.04
-    timeout-minutes: 5
+    timeout-minutes: 15
 
     steps:
       - name: Checkout source
@@ -46,3 +46,24 @@ jobs:
             --stack-name interview-network \
             --query 'Stacks[0].Outputs' \
             --output table  
+      
+      - name: Deploy EC2 stack
+        run: |
+          aws cloudformation validate-template \
+            --template-body file://cloudformation/ec2.yml
+
+          aws cloudformation deploy \
+            --template-file cloudformation/ec2.yml \
+            --stack-name interview-ec2 \
+            --role-arn arn:aws:iam::149703445367:role/interview-cfn-execution-role \
+            --parameter-overrides \
+              VpcId=vpc-05e6cdb2e34e1f270 \
+              SubnetId=subnet-0d5c62b6553c6351e \
+            --no-fail-on-empty-changeset
+
+      - name: Show EC2 outputs
+        run: |
+          aws cloudformation describe-stacks \
+            --stack-name interview-ec2 \
+            --query 'Stacks[0].Outputs' \
+            --output table

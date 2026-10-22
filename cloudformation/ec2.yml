@@ -1,0 +1,55 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: One small EC2 instance for the interview lab
+
+Parameters:
+  VpcId:
+    Type: AWS::EC2::VPC::Id
+
+  SubnetId:
+    Type: AWS::EC2::Subnet::Id
+
+  AmiId:
+    Type: AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
+    Default: /aws/service/ami-amazon-linux-latest/al2023-ami-kernel-default-x86_64
+
+Resources:
+  InstanceSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Interview lab - no inbound access
+      VpcId: !Ref VpcId
+      SecurityGroupIngress: []
+      SecurityGroupEgress:
+        - IpProtocol: "-1"
+          CidrIp: 0.0.0.0/0
+
+  Instance:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: !Ref AmiId
+      InstanceType: t3.micro
+      SubnetId: !Ref SubnetId
+      SecurityGroupIds:
+        - !Ref InstanceSecurityGroup
+      MetadataOptions:
+        HttpTokens: required
+      BlockDeviceMappings:
+        - DeviceName: /dev/xvda
+          Ebs:
+            VolumeSize: 8
+            VolumeType: gp3
+            Encrypted: true
+            DeleteOnTermination: true
+      Tags:
+        - Key: Name
+          Value: interview-ec2
+
+Outputs:
+  InstanceId:
+    Value: !Ref Instance
+
+  PrivateIp:
+    Value: !GetAtt Instance.PrivateIp
+    Description: Private IP address of the EC2 instance
+  
+  
