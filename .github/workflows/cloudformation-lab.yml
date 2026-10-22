@@ -10,7 +10,7 @@ permissions:
 jobs:
   verify-aws-access:
     runs-on: ubuntu-24.04
-    timeout-minutes: 15
+    timeout-minutes: 45
 
     steps:
       - name: Checkout source
@@ -65,5 +65,27 @@ jobs:
         run: |
           aws cloudformation describe-stacks \
             --stack-name interview-ec2 \
+            --query 'Stacks[0].Outputs' \
+            --output table
+
+            - name: Deploy EKS stack
+        run: |
+          aws cloudformation validate-template \
+            --template-body file://cloudformation/eks.yml
+
+          aws cloudformation deploy \
+            --template-file cloudformation/eks.yml \
+            --stack-name interview-eks \
+            --capabilities CAPABILITY_NAMED_IAM \
+            --role-arn arn:aws:iam::149703445367:role/interview-cfn-execution-role \
+            --parameter-overrides \
+              SubnetA=subnet-0d5c62b6553c6351e \
+              SubnetB=subnet-008fa2bc6c0f58ee2 \
+            --no-fail-on-empty-changeset
+
+      - name: Show EKS outputs
+        run: |
+          aws cloudformation describe-stacks \
+            --stack-name interview-eks \
             --query 'Stacks[0].Outputs' \
             --output table
