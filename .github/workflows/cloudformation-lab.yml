@@ -1,0 +1,36 @@
+name: CloudFormation Interview Lab
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  verify-aws-access:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Authenticate to AWS using OIDC
+        uses: aws-actions/configure-aws-credentials@v6.3.0
+        with:
+          role-to-assume: arn:aws:iam::149703445367:role/interview-github-deploy-role
+          aws-region: us-east-1
+          allowed-account-ids: "149703445367"
+          role-session-name: cloudformation-lab-${{ github.run_id }}
+
+      - name: Verify AWS identity
+        run: aws sts get-caller-identity
+
+      - name: Validate bootstrap template
+        run: |
+          aws cloudformation validate-template \
+            --template-body file://cloudformation/bootstrap-oidc.yml
+            
